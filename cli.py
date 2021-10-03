@@ -1,7 +1,7 @@
 import subprocess as sp
 import os
 import sys
-
+from Runner import Runner
 # Path 1: system path
 # Path 2: internal functions
 # Path 3: pythonscripts folder
@@ -16,6 +16,8 @@ class Shell():
         self.username = os.environ['USERNAME']
         self.MSG_wrong_path = "Could Not Find Specified Path"
         self.internal_functions = {"ls": self.ls, "cd": self.cd}
+        self.runner = Runner(self.python_scripts_folder, self.path_variables,
+                             self.MSG_wrong_path)
 
     def runcli(self):
         req = ""
@@ -40,82 +42,11 @@ class Shell():
         for e in os.listdir(self.cwd):
             print(e)
 
-        pass
+    def mkdir(path, name):
+        os.mkdir(path + '\\' + name)
 
-    def mkdir(path):
-        pass
-
-    def rmdir(path):
-        pass
-
-    # finds exe files in path
-    def find_path_func(self, cmd):
-        if '.exe' not in cmd:
-            cmd += '.exe'
-
-        for _dir in self.path_variables:
-            full_path = _dir + '\\' + cmd
-            if os.path.exists(full_path):
-                return False, full_path
-
-        return True, self.MSG_wrong_path
-
-    # finds py files in pythonscripts
-    def find_python_func(self, cmd):
-        if '.py' not in cmd:
-            cmd += '.py'
-
-        full_path = self.python_scripts_folder + '\\' + cmd
-        if os.path.exists(full_path):
-            return False, full_path
-
-        return True, self.MSG_wrong_path
-
-    def get_command(self, c):
-
-        if c in self.internal_functions:
-            print(f"Debug: {c} | Internal Command")
-            return self.internal_functions[c]
-
-        err, path_ = self.find_python_func(c)
-        if not err:
-            print(f"Debug: {c} | Python Command")
-            return ["python", path_]
-
-        err, path_ = self.find_path_func(c)
-        if not err:
-            print(f"Debug: {c} | Path Command")
-            return [path_]
-
-        return self.MSG_wrong_path
-
-    def pipe(self, program, inputprogram):
-
-        p1 = sp.Popen(self.get_command(program), stdout=sp.PIPE, shell=None)
-
-        p2 = sp.Popen(self.get_command(inputprogram),
-                      stdin=p1.stdout,
-                      shell=None)
-        p1.stdout.close()
-        return p2.communicate()[0]
-
-    def stdin(self, program, inputfilename):
-        with open(inputfilename.strip(), 'rb') as f:
-            p1 = sp.Popen(self.get_command(program), stdin=f, shell=None)
-            return p1.communicate()[0]
-
-    def stdout(self, program, outptfilename):
-        with open(outptfilename.strip(), 'wb') as f:
-            p1 = sp.Popen(self.get_command(program), stdout=f, shell=None)
-            return p1.communicate()[0]
-
-    def run_internal_command(self, command, i_=sys.stdin, o_=sys.stdout):
-        i, o = sys.stdin, sys.stdout
-        sys.stdin = i_
-        sys.stdout = o_
-        command()
-        sys.stdin = i
-        sys.stdout = o
+    def rmdir(path, name):
+        os.remove(path + '\\' + name)
 
     # handles < | >
     def handle_operators(self, req, original=True):
@@ -145,34 +76,12 @@ class Shell():
         p = sp.Popen(self.get_command(req), shell=None)
         return p.communicate()[0]
 
+    def run_internal_command(self, funcname):
+        pass
 
-class ShellCommand():
-    pass
-
-
-'''
-class PythonShellOps():
-    @staticmethod
-    def pipe(program, inputprogram):
-        p1 = sp.Popen(["python", program.strip()], stdout=sp.PIPE, shell=None)
-        p2 = sp.Popen(["python", inputprogram.strip()],
-                      stdin=p1.stdout,
-                      shell=None)
-        p1.stdout.close()
-        return p2.communicate()[0]
-
-    @staticmethod
-    def stdin(program, inputfilename):
-        with open(inputfilename.strip(), 'rb') as f:
-            p1 = sp.Popen(["python", program.strip()], stdin=f, shell=None)
-            return p1.communicate()[0]
-
-    @staticmethod
-    def stdout(program, outptfilename):
-        with open(outptfilename.strip(), 'wb') as f:
-            p1 = sp.Popen(["python", program.strip()], stdout=f, shell=None)
-            p1.communicate()[0]
-'''
+    def run(self, funcname):
+        if funcname in self.internal_functions:
+            pass
 
 
 def main():
