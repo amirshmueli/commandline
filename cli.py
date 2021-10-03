@@ -73,11 +73,10 @@ class Shell():
         if not original:
             return req
 
-        p = sp.Popen(self.get_command(req), shell=None)
-        return p.communicate()[0]
+        self.run(req)
 
     def run_internal_command(self, funcname):
-        pass
+        funcname()  #@todo pipes and shit
 
     def run(self, funcname):
         if funcname in self.internal_functions:
