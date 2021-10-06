@@ -1,3 +1,4 @@
+__author__ = "amir shmueli"
 import subprocess as sp
 import os
 import sys
@@ -36,7 +37,7 @@ class Shell():
         if not query:
             return
         try:
-            print(f"request is: {query}")
+            #print(f"request is: {query}")
             if '|' in query:
                 req_list = query.split('|', 1)
                 self.pipe(req_list[0].strip(), req_list[1].strip())
@@ -44,7 +45,6 @@ class Shell():
                 req_list = query.split('<', 1)
                 self.stdin(req_list[0].strip(), req_list[1].strip())
             elif '>' in query:
-                print('hi')
                 req_list = query.split('>', 1)
                 self.stdout(req_list[0].strip(), req_list[1].strip())
             else:
@@ -62,7 +62,6 @@ class Shell():
     # region inops
     def cd(self, path):
         path = path[0]
-        print('here')
         if os.path.exists(path):
             self.cwd = path
             return
@@ -98,23 +97,23 @@ class Shell():
     # endregion inops
 
     def pipe(self, p1, p2):
-        p1 = self.isInternal(p1)
-        if p1:
-            self._iPipe(p1, p2)
+        x = self.isInternal(p1)
+        if x:
+            self._iPipe(x, p2)
         else:
             self._xPipe(p1, p2)
 
     def stdin(self, p1, inputfile):
-        p1 = self.isInternal(p1)
-        if p1:
-            self._iStdin(p1, inputfile)
+        x = self.isInternal(p1)
+        if x:
+            self._iStdin(x, inputfile)
         else:
             self._xStdin(p1, inputfile)
 
     def stdout(self, p1, outputfile):
-        p1 = self.isInternal(p1)
-        if p1:
-            self._iStdout(p1, outputfile)
+        x = self.isInternal(p1)
+        if x:
+            self._iStdout(x, outputfile)
         else:
             self._xStdout(p1, outputfile)
 
@@ -126,8 +125,6 @@ class Shell():
             return self.internal_functions[p], program.split(' ')[1:]
 
         return None
-
-    # external operators
 
     # region external
     # finds exe files in path
@@ -144,7 +141,6 @@ class Shell():
 
     # finds py files in pythonscripts
     def find_python_func(self, cmd):
-        print(cmd)
         if '.py' not in cmd:
             cmd += '.py'
 
@@ -155,14 +151,19 @@ class Shell():
         return True, self.MSG_wrong_path
 
     def get_command(self, c):
+        _c = None
+        if c.strip().count(' ') != 0:
+            _c = c.split(' ')
+            c = _c[0]
+
         err, path_ = self.find_python_func(c)
         if not err:
-            print(f"Debug: {c} | Python Command")
+            #print(f"Debug: {c} | Python Command")
             return ["python", path_]
 
         err, path_ = self.find_path_func(c)
         if not err:
-            print(f"Debug: {c} | Path Command")
+            #print(f"Debug: {c} | Path Command")
             return [path_]
 
         raise ValueError(self.MSG_wrong_path)
@@ -202,7 +203,6 @@ class Shell():
             sys.stdin = oldin
 
     def _iStdout(self, program, outptfilename):
-        print('i am outing')
         with open(outptfilename, 'w') as newf:
             # save old stdout
             oldout = sys.stdout
