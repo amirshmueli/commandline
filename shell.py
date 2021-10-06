@@ -1,4 +1,4 @@
-__author__ = "amir shmueli"
+__author__ = "amirshmueli"
 import subprocess as sp
 import os
 import sys
