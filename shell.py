@@ -7,7 +7,8 @@ class Shell():
     def __init__(self):
         self._default_stdin = sys.stdin
         self._default_stdout = sys.stdout
-        self.path_variables = os.environ['path'].split(';')
+        self.environment = os.environ
+        self.path_variables = self.environment['path'].split(';')
         self.python_scripts_folder = ".\\pythonscripts"
         self.original_directory = os.getcwd()
         self.cwd = self.original_directory
@@ -19,13 +20,14 @@ class Shell():
             "ls": self.ls,
             "cd": self.cd,
             "mkdir": self.mkdir,
-            "rmdir": self.rmdir
+            "rmdir": self.rmdir,
+            "set": self.set
         }
 
     def runcli(self):
         req = ""
         while req != "exit":
-            self.handle_operators(req)
+            self.handle_operators(req.strip())
             req = input(f"{self.username}~[{self.cwd}]$ ")
             print()
         print('====== Terminal Is Killed ======')
@@ -33,29 +35,34 @@ class Shell():
     def handle_operators(self, query):
         if not query:
             return
-
-        print(f"request is: {query}")
-        if '|' in query:
-            req_list = query.split('|', 1)
-            self.pipe(req_list[0].strip(), req_list[1].strip())
-        elif '<' in query:
-            req_list = query.split('<', 1)
-            self.stdin(req_list[0].strip(), req_list[1].strip())
-        elif '>' in query:
-            req_list = query.split('>', 1)
-            self.stdout(req_list[0].strip(), req_list[1].strip())
-        else:
-            self.run(query)
+        try:
+            print(f"request is: {query}")
+            if '|' in query:
+                req_list = query.split('|', 1)
+                self.pipe(req_list[0].strip(), req_list[1].strip())
+            elif '<' in query:
+                req_list = query.split('<', 1)
+                self.stdin(req_list[0].strip(), req_list[1].strip())
+            elif '>' in query:
+                print('hi')
+                req_list = query.split('>', 1)
+                self.stdout(req_list[0].strip(), req_list[1].strip())
+            else:
+                self.run(query)
+        except Exception as e:
+            self.error_handler(e)
 
     def run(self, command):
         p = self.isInternal(command)
         if p:
-            p()
+            p[0](p[1])
         else:
             sp.Popen(self.get_command(command)).communicate()
 
     # region inops
     def cd(self, path):
+        path = path[0]
+        print('here')
         if os.path.exists(path):
             self.cwd = path
             return
@@ -66,35 +73,57 @@ class Shell():
 
         print(self.MSG_wrong_path)
 
-    def ls(self):
+    def ls(self, *args):
         for e in os.listdir(self.cwd):
             print(e)
 
-    def mkdir(path, name):
-        os.mkdir(path + '\\' + name)
+    def mkdir(self, name):
+        name = name[0]
+        os.mkdir(self.cwd + '\\' + name)
 
-    def rmdir(path, name):
-        os.remove(path + '\\' + name)
+    def rmdir(self, name):
+        name = name[0]
+        os.remove(self.cwd + '\\' + name)
+
+    def set(self, args):
+        if not args:
+            for key in os.environ:
+                print(f"{key}: {os.environ[key]}")
+            return
+
+        _args = args.split()
+        if _args[0] in self.environment:
+            self[self.environment] = _args[1]
 
     # endregion inops
+
     def pipe(self, p1, p2):
         p1 = self.isInternal(p1)
         if p1:
             self._iPipe(p1, p2)
+        else:
+            self._xPipe(p1, p2)
 
     def stdin(self, p1, inputfile):
         p1 = self.isInternal(p1)
         if p1:
             self._iStdin(p1, inputfile)
+        else:
+            self._xStdin(p1, inputfile)
 
     def stdout(self, p1, outputfile):
         p1 = self.isInternal(p1)
         if p1:
             self._iStdout(p1, outputfile)
+        else:
+            self._xStdout(p1, outputfile)
 
     def isInternal(self, program):
-        if program in self.internal_functions:
-            return self.internal_functions[program]
+        p = program
+        if ' ' in program:
+            p = program.split(' ')[0].strip()
+        if p in self.internal_functions:
+            return self.internal_functions[p], program.split(' ')[1:]
 
         return None
 
@@ -115,6 +144,7 @@ class Shell():
 
     # finds py files in pythonscripts
     def find_python_func(self, cmd):
+        print(cmd)
         if '.py' not in cmd:
             cmd += '.py'
 
@@ -145,17 +175,17 @@ class Shell():
                       stdin=p1.stdout,
                       shell=None)
         p1.stdout.close()
-        return p2.communicate()[0]
+        p2.communicate()[0]
 
     def _xStdin(self, program, inputfilename):
         with open(inputfilename.strip(), 'rb') as f:
             p1 = sp.Popen(self.get_command(program), stdin=f, shell=None)
-            return p1.communicate()[0]
+            p1.communicate()[0]
 
     def _xStdout(self, program, outptfilename):
         with open(outptfilename.strip(), 'wb') as f:
             p1 = sp.Popen(self.get_command(program), stdout=f, shell=None)
-            return p1.communicate()[0]
+            p1.communicate()[0]
 
     # endregion external
 
@@ -172,6 +202,7 @@ class Shell():
             sys.stdin = oldin
 
     def _iStdout(self, program, outptfilename):
+        print('i am outing')
         with open(outptfilename, 'w') as newf:
             # save old stdout
             oldout = sys.stdout
@@ -193,6 +224,7 @@ class Shell():
 def main():
     _shell = Shell()
     _shell.runcli()
+    #print(_shell.get_command("prog1.py"))
 
 
 if __name__ == "__main__":
